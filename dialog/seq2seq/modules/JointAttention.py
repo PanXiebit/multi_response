@@ -105,7 +105,7 @@ class JointAttnDecoder(tf.keras.layers.Layer):
         # concatenate
         concat_c = tf.concat([tgt_context_vec, tag_context_vec, tgt_hidden], axis=1)
         out = self.linear_out(concat_c)   # [batch, dec_hidden_size]
-        return out, next_state
+        return out, next_state[0]
 
     def train_decoder(self, tgt_inputs, tgt_length, tag_hidden, enc_outputs, enc_length,
                      decoder_init_states, maximum_iteration=None):
@@ -193,6 +193,7 @@ class JointAttnDecoder(tf.keras.layers.Layer):
 
 
 if __name__ == "__main__":
+    # tf.enable_eager_execution()
     rnncell = tf.keras.layers.GRUCell(units=32)
     num_units = 32
     attndecoder = JointAttnDecoder(rnncell,
