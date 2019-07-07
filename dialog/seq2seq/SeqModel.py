@@ -45,11 +45,12 @@ class Seq2SeqWithTag(tf.keras.Model):
                                                     go_backwards=bidirectional)
             self.dec_cell = tf.keras.layers.LSTMCell(units=dec_hidden_size,
                                                      dropout=dropout)
+
         else:
             raise NameError("rnn typr must be lstm or gru")
 
         # JointAttentionDecoder
-        AttnDecoder = JointAttention(enc_hidden_size, dec_hidden_size, tag_hidden_size, atten_type="bahdanau")
+        AttnDecoder = JointAttnDecoder(enc_hidden_size, dec_hidden_size, tag_hidden_size, atten_type="bahdanau")
         
     def call(self, inputs, training=None, mask=None):
         src_inputs = inputs[0]  # [batch, src_len]
@@ -72,10 +73,10 @@ class Seq2SeqWithTag(tf.keras.Model):
     def src_encoder(self, src_inputs):
         src_emb = self.Embedding(src_inputs)
         if self.rnn_type == "gru":
-            outputs = self.rnn_encoder(src_emb)
+            outputs = self.enc_encoder(src_emb)
             encoder_outputs, enc_hidden = outputs
         else:
-            outputs = self.rnn_encoder(src_emb)
+            outputs = self.enc_encoder(src_emb)
             encoder_outputs = outputs[0]
             enc_hidden = outputs[1:]
         return encoder_outputs, enc_hidden
