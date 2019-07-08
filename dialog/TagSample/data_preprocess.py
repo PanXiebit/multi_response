@@ -1,5 +1,6 @@
 # -*- encoding=utf8 -*-
-"""Defines Subtokenizer class to encode and decode strings."""
+
+""" Subtokenizer class to encode and decode strings."""
 
 from __future__ import absolute_import
 from __future__ import division
@@ -26,8 +27,8 @@ def get_word_count(filename):
     word_count = collections.defaultdict(int)
     with codecs.open(filename, "r", "utf8") as f:
         for i, line in tqdm(enumerate(f)):
-            # if i > 5:
-            #     break
+            #if i > 5:
+            #    break
             content = line.strip().split("\t")
             if len(content) != 2:
                 continue
@@ -149,11 +150,12 @@ def _split_token_to_subtokens(token, subtoken_dict):
 
 
 if __name__ == "__main__":
-    train_path = "/home/panxie/Documents/myGAN/multi-response/data/weibo/sampler_data.tsv"
-    vocab_file = "/home/panxie/Documents/myGAN/tf_multi_response/data/weibo/weibo.vocab_2.txt"
+    train_path = "/home/work/xiepan/xp_dial/tf_multi_response/data/weibo/sampler_data.tsv"
+    vocab_file = "/home/work/xiepan/xp_dial/tf_multi_response/data/weibo/weibo.vocab_2.txt"
     subtoken = Subtokenizer.init_from_files(vocab_file, train_path, 50000)
     text_str = "哈哈 嘻嘻 谢谢 你好 我 我们"
     print(subtoken.encode(text_str, add_eos=True))
+
 
 
 

@@ -6,7 +6,7 @@ from dialog.seq2seq.modules.JointAttention import JointAttnDecoder
 class Seq2SeqWithTag(tf.keras.Model):
     def __init__(self, src_vocab_size, share_embed_size,
                  rnn_type, enc_hidden_size, dec_hidden_size, tag_hidden_size,
-                 num_layers, dropout, bidirectional, tie_weights, feat_merge):
+                 num_layers, dropout, bidirectional, tie_weights, feat_merge="sum"):
         super(Seq2SeqWithTag, self).__init__()
         # embedding layer
         self.src_vocab_size = src_vocab_size
@@ -50,7 +50,10 @@ class Seq2SeqWithTag(tf.keras.Model):
             raise NameError("rnn typr must be lstm or gru")
 
         # JointAttentionDecoder
-        AttnDecoder = JointAttnDecoder(enc_hidden_size, dec_hidden_size, tag_hidden_size, atten_type="bahdanau")
+        dec_rnn_cell = tf.keras.layers.GRUCell(units=dec_hidden_size)
+        attn_size = dec_hidden_size
+        self.AttnDecoder = JointAttnDecoder(dec_rnn_cell, enc_hidden_size, dec_hidden_size, tag_hidden_size,
+                 output_size=attn_size, attn_type="bahdanau")
         
     def call(self, inputs, training=None, mask=None):
         src_inputs = inputs[0]  # [batch, src_len]
@@ -61,9 +64,20 @@ class Seq2SeqWithTag(tf.keras.Model):
         src_len = tf.reduce_sum(tf.math.not_equal(src_inputs, 0), axis=1)  # [batch]
         tag_len = tf.reduce_sum(tf.math.not_equal(tag_inputs, 0), axis=1)  # [batch]
         tgt_len = tf.reduce_sum(tf.math.not_equal(tgt_inputs, 0), axis=1)  # [batch]
-        
-        
-        
+
+        enc_outputs, enc_hidden = self.enc_encoder(src_inputs)
+        tag_hidden = self.tag_encoder(tag_inputs)
+        decoder_init_states = self.init_decoder_state(enc_hidden, tag_hidden)
+
+        seq_outputs, _ = self.AttnDecoder.train_decoder(
+            tgt_inputs,
+            tgt_length=tgt_len,
+            tag_hidden=tag_hidden,
+            enc_outputs=enc_outputs,
+            enc_length=src_len,
+            decoder_init_states=decoder_init_states,
+            maximum_iteration=None)
+        return seq_outputs
 
     def tag_encoder(self, tag_inputs):
         tag_embed = self.Embedding(tag_inputs)
@@ -106,20 +120,13 @@ class Seq2SeqWithTag(tf.keras.Model):
                 h = tf.concat([h, tag_hidden], axis=-1)
                 c = tf.concat([c, tag_hidden], axis=-1)
             return h,c
-        
-    def decoder(self, rnn_cell, tgt_inputs, tag_hidden, enc_outputs, decoder_init_states, training=None):
-        """
-        
-        :param tgt_inputs:
-        :param tag_hidden:
-        :param enc_outputs:
-        :param decoder_init_states:
-        :param training:
-        :return:
-        """
-        if training:
-            pass
-                
+
+
+if __name__ == "__main__":
+    pass
+
+
+
              
 
     

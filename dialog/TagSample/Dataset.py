@@ -9,6 +9,7 @@ class get_dataset(object):
         super(get_dataset, self).__init__()
         self.subtoken = Subtokenizer.init_from_files(vocab_file, train_path, vocab_size)
         self.vocab_size = self.subtoken.vocab_size
+        tf.logging.info("total vocab size include special token: {}".format(self.vocab_size))
 
     def convert_string_to_index(self, file_path, ids_file):
         if tf.gfile.Exists(ids_file):
@@ -40,7 +41,7 @@ class get_dataset(object):
         line = tf.string_to_number(line, tf.int32)
         return line
 
-    def _train_input_fn(self, train_path, train_ids_file, batch_size,
+    def _train_input_fn(self, train_path, train_ids_file,batch_size,
                         repeat=1, shuffer=True, buffer_size=10000):
         self.convert_string_to_index(train_path, train_ids_file)
         self.dataset = tf.data.TextLineDataset(train_ids_file)
@@ -59,7 +60,7 @@ class get_dataset(object):
         dict = iterator.get_next()
         return dict["src"], dict["tgt"]
 
-    def _eval_input_fn(self, eval_path, eval_ids_file, batch_size=5):
+    def _eval_input_fn(self, eval_path, eval_ids_file, batch_size):
         self.convert_string_to_index(eval_path, eval_ids_file)
         self.dataset = tf.data.TextLineDataset(eval_ids_file)
         dataset = self.dataset.map(self._parse_train_and_eval_line)
@@ -71,9 +72,9 @@ class get_dataset(object):
 
 if __name__ == "__main__":
     tf.enable_eager_execution()
-    train_path = "/home/panxie/Documents/myGAN/multi-response/data/weibo/sampler_data.tsv"
-    vocab_file = "/home/panxie/Documents/myGAN/tf_multi_response/data/weibo/weibo.vocab.txt"
-    train_ids_file = "/home/panxie/Documents/myGAN/tf_multi_response/data/weibo/sampler_data_idx.csv"
-    Dataset = get_dataset(vocab_file, train_path)
+    train_path = "/home/work/xiepan/xp_dial/tf_multi_response/data/weibo/sampler_data.tsv"
+    vocab_file = "/home/work/xiepan/xp_dial/tf_multi_response/data/weibo/weibo.vocab.txt"
+    train_ids_file = "/home/work/xiepan/xp_dial/tf_multi_response/data/weibo/sampler_data_idx.csv"
+    Dataset = get_dataset(vocab_file, train_path, 50000)
     src, tgt = Dataset._train_input_fn(train_path, train_ids_file)
     print(src.shape, tgt.shape)

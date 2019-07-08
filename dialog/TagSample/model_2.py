@@ -1,3 +1,4 @@
+# -*- encoding=utf8 -*-
 from __future__ import division
 # from dialog.TagSample.modelHelper import ShareEmbeddings, RNNEncoder
 import tensorflow as tf
@@ -16,10 +17,10 @@ class TagSimple(tf.keras.Model):
         self.bidirectional = bidirectional
 
         self.embedding = tf.keras.layers.Embedding(vocab_size, embedding_size)
-        self.rnn_encoder = tf.keras.layers.LSTM(units=hidden_size,
-                                               return_sequences=True,
-                                               return_state=True,
-                                               go_backwards=False)
+        # self.rnn_encoder = tf.keras.layers.GRU(units=hidden_size,
+        #                                        return_sequences=True,
+        #                                        return_state=True,
+        #                                        go_backwards=False)
 
         if self.rnn_type == "lstm":
             self.rnn_cells = tf.keras.layers.StackedRNNCells(
@@ -51,22 +52,23 @@ class TagSimple(tf.keras.Model):
         if self.rnn_type == "lstm":
             _, (enc_hidden, _) = self.rnn_encoder(src_emb)
         elif self.rnn_type == "gru":
-            _, enc_hidden = self.rnn_encoder(src_emb)
+            outputs = self.rnn_encoder(src_emb)
+            enc_hidden = tf.concat(outputs[1:], axis=-1)
         else:
             raise NameError
         logits = self.linear3(self.linear2(self.linear1(enc_hidden)))
         log_prob = tf.nn.log_softmax(logits, axis=-1)
         return log_prob
-
-
 if __name__ == "__main__":
-    # tf.enable_eager_execution()
+    #tf.enable_eager_execution()
     from dialog.TagSample.Dataset import get_dataset
-    train_path = "/home/panxie/Documents/myGAN/multi-response/data/weibo/sampler_data.tsv"
-    vocab_file = "/home/panxie/Documents/myGAN/tf_multi_response/data/weibo/weibo.vocab.txt"
-    ids_file = "/home/panxie/Documents/myGAN/tf_multi_response/data/weibo/sampler_data_idx.csv"
+
+    train_path = "/home/work/xiepan/xp_dial/tf_multi_response/data/weibo/sampler_data.tsv"
+    vocab_file = "/home/work/xiepan/xp_dial/tf_multi_response/data/weibo/weibo.vocab.txt"
+    ids_file = "/home/work/xiepan/xp_dial/tf_multi_response/data/weibo/sampler_data_idx.csv"
+
     Dataset = get_dataset(vocab_file, train_path, vocab_size=50000)
-    model = TagSimple(Dataset.vocab_size, embedding_size=64, hidden_size=100, rnn_type="lstm")
+    model = TagSimple(Dataset.vocab_size, embedding_size=64, hidden_size=100, rnn_type="gru", num_layers=2)
     src, tgt = Dataset._train_input_fn(train_path, ids_file)
     log_prob = model(src)
     for var in model.trainable_weights:
@@ -74,4 +76,3 @@ if __name__ == "__main__":
     # print(model.trainable_weights)
 
     print(log_prob.shape)
-

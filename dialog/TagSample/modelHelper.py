@@ -1,3 +1,4 @@
+# -*- encoding=utf8 -*-
 import tensorflow as tf
 
 class ShareEmbeddings(tf.keras.layers.Layer):
@@ -9,6 +10,8 @@ class ShareEmbeddings(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         embedded = self.embedding(inputs)
+        print(self.embedding.trainable_weights)
+        print(self.trainable_weights)
         return embedded
 
 class RNNEncoder(tf.keras.layers.Layer):
@@ -51,7 +54,7 @@ class RNNEncoder(tf.keras.layers.Layer):
 
     def call(self, inputs, **kwargs):
         outputs = self.rnn(inputs)
-        print(outputs)
+        
         if self.rnn_type == "lstm":
             seq_outputs = outputs[0]
             h_states, c_states = [], []
@@ -71,24 +74,22 @@ if __name__ == "__main__":
     Embedding = ShareEmbeddings(10, 64)
     inputs = tf.constant([[5,3], [1,2]], dtype=tf.int32)
     embed_inputs = Embedding(inputs)
-    print(Embedding.trainable_weights)
+    print(Embedding.embedding.trainable_weights)
 
     optimizer = tf.train.AdamOptimizer(learning_rate=0.001)
-
-    # grads_and_vars = optimizer.compute_gradients(embed_inputs, Embedding.trainable_variables)
-    # for grad in grads_and_vars:
-    #     print(grad)
-    # grads = tf.clip_by_global_norm(grads_and_vars[1:], clip_norm=5.0)
-    # print(grads)
-    # optimizer.apply_gradients(zip(grads, Embedding.trainable_variables))
-    optimizer.minimize(embed_inputs)
     
+    grads_and_vars = optimizer.compute_gradients(embed_inputs, Embedding.trainable_variables)
+    for grad in grads_and_vars:
+        print(grad)
+    #print(len(grads_and_vars))
+    #grads = tf.clip_by_global_norm(grads_and_vars[1:], clip_norm=5.0)
+    optimizer.minimize(embed_inputs)
 
-    # Encoder = RNNEncoder("gru", hidden_size=128, num_layers=3, bidirectional=False)
-    # # print(Encoder.trainable_weights)
-    # outputs, states = Encoder(embed_inputs)
-    # # print(Encoder.trainable_weights)   # 只有 call 之后才能看到变量，因为 build 函数是在 call 之后才执行。
-    # print(outputs.shape, states[0].shape)
-    # # for var in Encoder.trainable_weights:
-    # #     print(var)
-    # print(Encoder.trainable_weights)
+#    Encoder = RNNEncoder("gru", hidden_size=128, num_layers=3, bidirectional=False)
+#    # print(Encoder.trainable_weights)
+#    outputs, states = Encoder(embed_inputs)
+#    # print(Encoder.trainable_weights)   # 只有 call 之后才能看到变量，因为 build 函数是在 call 之后才执行。
+#    print(outputs.shape, states[0].shape)
+#    for var in Encoder.trainable_weights:
+#        print(var)
+#    print(len(Encoder.trainable_weights))
